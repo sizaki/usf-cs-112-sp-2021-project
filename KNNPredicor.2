@@ -1,0 +1,216 @@
+package DataAnalytics;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class KNNPredictor extends Predictor {
+	private int k;
+	private int bluenumber;
+	private int orangenumber;
+	
+	ArrayList<DataPoint> results;
+	
+	public KNNPredictor(int numk) {
+		k = numk;
+		bluenumber = 0;
+		orangenumber = 0;
+	}
+
+public double getDistance(DataPoint data1,DataPoint data2) {
+	return Math.sqrt(Math.pow(data2.getf1()-data1.getf1(), 2)+(Math.pow(data2.getf2()-data1.getf2(), 2)));
+}
+
+	@Override
+	public ArrayList<DataPoint> readData(String filename) {
+		bluenumber=0;
+		orangenumber=0;
+		results = new ArrayList<DataPoint>();
+		try (Scanner scanner = new Scanner(new File(filename));) {
+			scanner.nextLine();
+			while (scanner.hasNextLine()) {
+				List<String> records = getRecordFromLine(scanner.nextLine());
+				//System.out.println(records);
+				Integer survived = Integer.parseInt(records.get(0));
+				Double age = Double.parseDouble(records.get(5));
+				Double fare = Double.parseDouble(records.get(6));
+				String label = records.get(1);
+				Boolean test = false;
+				if (Math.random() < 0.1) {
+					test = true;
+				}
+				if (test == false) {
+					if (survived == 1) {
+						orangenumber++;
+					} else {
+						bluenumber++;
+					}
+				}
+				DataPoint data = new DataPoint(age, fare, label, test);
+				results.add(data);
+			}
+
+			// TODO: Select the columns from the records and create a DataPoint object//
+			// TODO: Store the DataPoint object in a collection}}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		// TODO Auto-generated method stub
+		System.out.println("number of people who survived in training data" +orangenumber);
+		System.out.println("number of people who died in training data" +bluenumber);
+		
+		return results;
+	}
+
+	private List<String> getRecordFromLine(String line) {
+		List<String> values = new ArrayList<String>();
+		try (Scanner rowScanner = new Scanner(line)) {
+			rowScanner.useDelimiter(",");
+			while (rowScanner.hasNext()) {
+				String value= rowScanner.next();
+				if(value.length()<1) {
+					values.add(""+35);
+				}
+				else {
+					values.add(value);
+				}
+			}
+		}
+		return values;
+	}
+
+	@Override
+	public String test(DataPoint data) {
+		//ArrayList<DataPoint> list= readData("titanic.csv");
+		//System.out.println(bluenumber+orangenumber);
+		Double[][] array=new Double[bluenumber+orangenumber][2];
+		int index = 0;
+		for(int i=0; i<results.size(); i++) {
+			if(!results.get(i).getIsTest()) {
+				array[index][0]=getDistance(data,results.get(i));
+				array[index][1]=Double.parseDouble(results.get(i).getLabel());
+				index ++;
+			}
+		}
+		//System.out.println(index + " "+ array.length+ " "+ (bluenumber+orangenumber));
+		for(int i=0; i<array.length;i++) {
+			for(int j=0; j<array.length-1; j++) {
+				if(compare(array[j],array[j+1])>0) {
+					Double[] temp=array[j];
+					array[j]=array[j+1];
+					array[j+1]=temp;
+				}
+			}
+		}
+	int oneCount=0;
+	int zeroCount=0;
+	for(int i=0; i<k;i++) {
+		if(array[i][1]==1.0) {
+			oneCount++;
+		}
+		else {
+			zeroCount++;
+		}
+	}
+	if(oneCount>zeroCount) {
+		return "1";
+	}
+	else {
+		return "0";
+	}
+		
+		// TODO Auto-generated method stub
+	}
+	private int compare(Double[]a,Double[]b){
+		return a[0].compareTo(b[0]);
+	}
+	
+
+	@Override
+	public Double getAccuracy(ArrayList<DataPoint> data) {
+		int truePositive =0;
+		int falsePositive=0;
+		int trueNegative=0;
+		int falseNegative=0;
+		
+		for(int i=0; i<data.size();i++) {
+			boolean test;
+			boolean label;
+			
+			if(test(data.get(i)).equals("1")) {
+				test=true;
+			}
+			else {
+				test=false;
+			}
+			if(data.get(i).getLabel().equals("1")) {
+				label=true;
+			}
+			else {
+				label=false;
+			}
+			
+			if(test && label) {
+				truePositive++;			
+			}
+			else if(test){
+				falsePositive++;
+			}
+			else if(label) {
+				falseNegative++;
+			}
+			else {
+				trueNegative++;
+			}
+		}
+		// TODO Auto-generated method stub
+		return (0.0+truePositive + trueNegative) / (truePositive + trueNegative + falsePositive + falseNegative);
+	}
+
+	@Override
+	public Double getPrecision(ArrayList<DataPoint> data) {
+		int truePositive =0;
+		int falsePositive=0;
+		int trueNegative=0;
+		int falseNegative=0;
+		
+		for(int i=0; i<data.size();i++) {
+			boolean test;
+			boolean label;
+			
+			if(test(data.get(i)).equals("1")) {
+				test=true;
+			}
+			else {
+				test=false;
+			}
+			if(data.get(i).getLabel().equals("1")) {
+				label=true;
+			}
+			else {
+				label=false;
+			}
+			
+			if(test && label) {
+				truePositive++;			
+			}
+			else if(test){
+				falsePositive++;
+			}
+			else if(label) {
+				falseNegative++;
+			}
+			else {
+				trueNegative++;
+			}
+		}
+
+		// TODO Auto-generated method stub
+		return (0.0+truePositive) / (truePositive + falseNegative);
+	}
+	
+
+}
